@@ -5,6 +5,14 @@
  */
 package jsp;
 
+import database.JdbcUtils_C3P0;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import utillies.BaseSQLHttpServlet;
@@ -17,6 +25,23 @@ public class LinkServlet extends BaseSQLHttpServlet {
 
     @Override
     public String getSQL(HttpServletRequest request, HttpServletResponse response) {
-        return "SELECT * FROM WLXX WHERE ROWNUM<=10";
+        String result = null;
+         try (Connection connection = JdbcUtils_C3P0.getConnection()) {
+            String sql="SELECT MK_SQL FROM MK WHERE MK_ID='"+request.getParameter("MKID").trim()+"'";
+            PreparedStatement preparedStatement = connection.prepareStatement(sql);
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                
+                if (resultSet.next()){
+                  result=resultSet.getString("MK_SQL");
+                }
+                resultSet.close();
+            }
+            connection.close();
+        } catch (SQLException ex) {
+            Logger.getLogger(LinkServlet.class.getName()).log(Level.SEVERE, null, ex);
+        }      
+        
+        
+        return result;
     }
 }
