@@ -6,16 +6,12 @@
 package jsp;
 
 import database.Connect2TargetDB;
-import database.JdbcUtils_C3P0;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.ServletException;
@@ -43,20 +39,20 @@ public class SQLTittleServlet extends HttpServlet {
                 String sql=request.getParameter("SQL").trim();
                 System.out.println(sql);
                 Connection   connection;
-                StringBuffer sb=new StringBuffer();
+                StringBuilder sb=new StringBuilder();
                 sb.append("[");
         try {
             connection = Connect2TargetDB.getConnection();
             PreparedStatement preparedStatement = connection.prepareStatement(sql);
-            ResultSet resultSet = preparedStatement.executeQuery();
-            ResultSetMetaData data=resultSet.getMetaData();            
-            for(int i=1;i<data.getColumnCount();i++){
-               sb.append("\"");
-               sb.append(data.getColumnLabel(i));
-               sb.append("\",");
-            }
-            sb.deleteCharAt(sb.length()-1);
-            resultSet.close();
+                    try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                        ResultSetMetaData data=resultSet.getMetaData();
+                        for(int i=1;i<=data.getColumnCount();i++){
+                            sb.append("\"");
+                            sb.append(data.getColumnLabel(i));
+                            sb.append("\",");
+                        }
+                        sb.deleteCharAt(sb.length()-1);
+                    }
             connection.close();
         } catch (SQLException ex) {
             Logger.getLogger(SQLTittleServlet.class.getName()).log(Level.SEVERE, null, ex);
