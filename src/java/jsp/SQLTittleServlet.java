@@ -12,12 +12,14 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import utillies.ObtainParametersFromSQL;
 
 /**
  *
@@ -36,33 +38,41 @@ public class SQLTittleServlet extends HttpServlet {
      */
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-                String sql=request.getParameter("SQL").trim();
-                System.out.println(sql);
-                Connection   connection;
-                StringBuilder sb=new StringBuilder();
-                sb.append("[");
+        String sql = request.getParameter("SQL").trim() + " ";
+        System.out.println(sql);
+        Connection connection;
+        StringBuilder sb = new StringBuilder();
+        sb.append("{\"tittles\":[");
         try {
             connection = Connect2TargetDB.getConnection();
-            PreparedStatement preparedStatement = connection.prepareStatement(sql);
-                    try (ResultSet resultSet = preparedStatement.executeQuery()) {
-                        ResultSetMetaData data=resultSet.getMetaData();
-                        for(int i=1;i<=data.getColumnCount();i++){
-                            sb.append("\"");
-                            sb.append(data.getColumnLabel(i));
-                            sb.append("\",");
-                        }
-                        sb.deleteCharAt(sb.length()-1);
-                    }
+            PreparedStatement preparedStatement = connection.prepareStatement(sql.replaceAll("[:]+(.*?)+\\s", "NULL "));
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                ResultSetMetaData data = resultSet.getMetaData();
+                for (int i = 1; i <= data.getColumnCount(); i++) {
+                    sb.append("\"");
+                    sb.append(data.getColumnLabel(i));
+                    sb.append("\",");
+                }
+                sb.deleteCharAt(sb.length() - 1);
+            }
             connection.close();
         } catch (SQLException ex) {
             Logger.getLogger(SQLTittleServlet.class.getName()).log(Level.SEVERE, null, ex);
         }
-        sb.append("]");
+        sb.append("],\"params\":[");
+        List<String> params = ObtainParametersFromSQL.getParameters(sql);
+        for (String s : params) {
+            sb.append("\"");
+            sb.append(s);
+            sb.append("\",");
+        }
+        if(params.size()>=1)
+        sb.deleteCharAt(sb.length() - 1);
+        sb.append("]}");
         response.getWriter().write(sb.toString());
-        
+        System.out.println(sb.toString());
+
 //            Connection connection=Connect2TargetDB.getConnection();
-            
-                
     }
 
     // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">
